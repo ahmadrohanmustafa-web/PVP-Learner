@@ -4,7 +4,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -20,12 +19,9 @@ public final class PvpLearnerClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Register the custom coach renderer; without this Minecraft crashes when the entity is visible.
-        EntityRendererRegistry.register(PvpLearner.PVP_COACH, PvpCoachRenderer::new);
-
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("pvp")
-                .executes(ctx -> { say("PvP Learner: /pvp kit <sword|axe|crystal|uhc|pot|mace>, /pvp start, /pvp stop, /pvp coach <on|off>"); return 1; })
+                .executes(ctx -> { say("PvP Learner: /pvp kit <sword|axe|crystal|uhc|pot|mace> gives your kit and configures optional PvP BOT; /pvp summon, /pvp dismiss, /pvp start, /pvp stop, /pvp coach <on|off>"); return 1; })
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("kit")
                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("name", com.mojang.brigadier.arguments.StringArgumentType.word())
                         .executes(ctx -> {
@@ -59,8 +55,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
                         client.getNetworkHandler().sendChatCommand("pvpbot remove PvPLearnerBot");
                         say("Sent PvP BOT the command to remove PvPLearnerBot.");
                     } else {
-                        client.getNetworkHandler().sendChatCommand("kill @e[type=pvp_learner:pvp_coach,distance=..32,limit=1]");
-                        say("Sent the legacy coach removal command.");
+                        say("PvP BOT is not loaded, so there is no companion bot to dismiss.");
                     }
                     return 1;
                 }))
@@ -171,7 +166,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
         if (client.player == null || !coachEnabled) return;
         int x = 8, y = 36;
         context.fill(x - 4, y - 5, x + 174, y + (training ? 61 : 43), 0xB8171923);
-        context.drawTextWithShadow(client.textRenderer, Text.literal("PVP LEARNER"), x, y, 0xFF7DD3FC);
+        context.drawTextWithShadow(client.textRenderer, Text.literal("PVP LEARNER + BOT"), x, y, 0xFF7DD3FC);
         context.drawTextWithShadow(client.textRenderer, Text.literal("Kit: " + selectedKit + (training ? "  |  TRAINING" : "  |  READY")), x, y + 13, 0xFFFFFFFF);
         context.drawTextWithShadow(client.textRenderer, Text.literal("Coach: " + (training ? "ON" : "WAITING")), x, y + 26, 0xFFB8BBC8);
         context.drawTextWithShadow(client.textRenderer, Text.literal(lastTip), x, y + 39, 0xFFFFE7A3);
