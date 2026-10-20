@@ -6,8 +6,11 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -16,6 +19,9 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.EntityHitResult;
 
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import org.lwjgl.glfw.GLFW;
 
 public final class PvpLearnerClient implements ClientModInitializer {
     private static boolean coachEnabled = true;
@@ -40,32 +46,39 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static int confirmedHits = 0;
     private static int mistakes = 0;
     private static int resumeAttackAt = -1;
+    private static final List<String> KIT_ORDER = List.of("sword", "axe", "crystal", "bow", "minecart", "mace", "spear", "uhc", "pot");
+    private static final List<KeyBinding> DIRECT_KIT_KEYS = new ArrayList<>();
+    private static KeyBinding nextKitKey;
+    private static KeyBinding previousKitKey;
 
     @Override
     public void onInitializeClient() {
+        nextKitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.pvp_learner.next_kit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, "category.pvp_learner.controls"));
+        previousKitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.pvp_learner.previous_kit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_J, "category.pvp_learner.controls"));
+        registerDirectKitKey("sword", GLFW.GLFW_KEY_F6);
+        registerDirectKitKey("axe", GLFW.GLFW_KEY_F7);
+        registerDirectKitKey("crystal", GLFW.GLFW_KEY_F8);
+        registerDirectKitKey("bow", GLFW.GLFW_KEY_F9);
+        registerDirectKitKey("minecart", GLFW.GLFW_KEY_F10);
+        registerDirectKitKey("mace", GLFW.GLFW_KEY_F11);
+        registerDirectKitKey("spear", GLFW.GLFW_KEY_F12);
+        registerDirectKitKey("uhc", GLFW.GLFW_KEY_H);
+        registerDirectKitKey("pot", GLFW.GLFW_KEY_P);
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("pvp")
                 .executes(ctx -> {
-                    say("Commands: /pvp kit <sword|axe|crystal|uhc|pot|mace>, /pvp summon, /pvp dismiss, /pvp start, /pvp stop, /pvp coach <on|off>, /pvp bot <spawn|remove|list|attack|stop|settings>");
+                    say("Commands: /pvp kit <sword|axe|crystal|bow|minecart|uhc|pot|mace|spear>, /pvp summon, /pvp dismiss, /pvp start, /pvp stop, /pvp coach <on|off>, /pvp bot <spawn|remove|list|attack|stop|settings>. Hotkeys: J/K cycle; F6-F12 kits; H UHC; P pot.");
                     return 1;
                 })
                 .then(ClientCommandManager.literal("kit")
                     .then(ClientCommandManager.argument("name", StringArgumentType.word())
                         .executes(ctx -> {
                             String kit = StringArgumentType.getString(ctx, "name").toLowerCase();
-                            if (!Set.of("sword", "axe", "crystal", "uhc", "pot", "mace").contains(kit)) {
-                                say("Unknown kit. Try sword, axe, crystal, uhc, pot, or mace.");
+                            if (!KIT_ORDER.contains(kit)) {
+                                say("Unknown kit. Try sword, axe, crystal, bow, minecart, mace, spear, uhc, or pot.");
                                 return 0;
                             }
-                            selectedKit = kit;
-                            applyPlayerKit(kit);
-                            lastTip = "Kit: " + kit + ". Track the target and time your swings.";
-                            say(lastTip);
-                            if (isPvpBotLoaded()) {
-                                setupPvpBotCompanion(kit);
-                            } else {
-                                say("Fighter not detected. Install PvP BOT + its required HeroBot dependency.");
-                            }
+                            switchKit(kit);
                             return 1;
                         })))
                 .then(ClientCommandManager.literal("start").executes(ctx -> {
@@ -187,6 +200,11 @@ public final class PvpLearnerClient implements ClientModInitializer {
                 return;
             }
             ticks++;
+            if (nextKitKey != null && nextKitKey.wasPressed()) cycleKit(1);
+            if (previousKitKey != null && previousKitKey.wasPressed()) cycleKit(-1);
+            for (int i = 0; i < DIRECT_KIT_KEYS.size(); i++) {
+                if (DIRECT_KIT_KEYS.get(i).wasPressed()) switchKit(KIT_ORDER.get(i));
+            }
             if (crosshairFeedbackTicks > 0) crosshairFeedbackTicks--;
 
             // A confirmed hit is detected from the target's health/hurt animation after a swing.
@@ -295,6 +313,22 @@ public final class PvpLearnerClient implements ClientModInitializer {
                 "minecraft:iron_chestplate 1", "minecraft:iron_leggings 1", "minecraft:iron_boots 1",
                 "minecraft:golden_apple 8", "minecraft:ender_pearl 8"
             };
+            case "bow" -> items = new String[] {
+                "minecraft:bow 1", "minecraft:arrow 64", "minecraft:spectral_arrow 16",
+                "minecraft:shield 1", "minecraft:diamond_helmet 1", "minecraft:diamond_chestplate 1",
+                "minecraft:diamond_leggings 1", "minecraft:diamond_boots 1", "minecraft:golden_apple 8"
+            };
+            case "minecart" -> items = new String[] {
+                "minecraft:netherite_sword 1", "minecraft:tnt_minecart 16", "minecraft:rail 64",
+                "minecraft:powered_rail 32", "minecraft:obsidian 32", "minecraft:flint_and_steel 1",
+                "minecraft:ender_pearl 8", "minecraft:diamond_helmet 1", "minecraft:diamond_chestplate 1",
+                "minecraft:diamond_leggings 1", "minecraft:diamond_boots 1"
+            };
+            case "spear" -> items = new String[] {
+                "minecraft:netherite_spear 1", "minecraft:shield 1", "minecraft:ender_pearl 8",
+                "minecraft:golden_apple 8", "minecraft:diamond_helmet 1", "minecraft:diamond_chestplate 1",
+                "minecraft:diamond_leggings 1", "minecraft:diamond_boots 1"
+            };
             case "crystal" -> items = new String[] {
                 "minecraft:netherite_sword 1", "minecraft:obsidian 64", "minecraft:end_crystal 64",
                 "minecraft:totem_of_undying 1", "minecraft:diamond_helmet 1", "minecraft:diamond_chestplate 1",
@@ -323,6 +357,30 @@ public final class PvpLearnerClient implements ClientModInitializer {
             };
         }
         for (String item : items) client.getNetworkHandler().sendChatCommand("give @s " + item);
+    }
+
+    private static void registerDirectKitKey(String kit, int keyCode) {
+        DIRECT_KIT_KEYS.add(KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key.pvp_learner.kit_" + kit, InputUtil.Type.KEYSYM, keyCode, "category.pvp_learner.controls")));
+    }
+
+    private static void cycleKit(int direction) {
+        int current = KIT_ORDER.indexOf(selectedKit);
+        if (current < 0) current = 0;
+        switchKit(KIT_ORDER.get(Math.floorMod(current + direction, KIT_ORDER.size())));
+    }
+
+    private static void switchKit(String kit) {
+        if (!KIT_ORDER.contains(kit)) {
+            say("Unknown kit. Try sword, axe, crystal, bow, minecart, mace, spear, uhc, or pot.");
+            return;
+        }
+        selectedKit = kit;
+        applyPlayerKit(kit);
+        lastTip = "Kit: " + kit + ". Track the target and time your swings.";
+        say(lastTip);
+        if (isPvpBotLoaded()) setupPvpBotCompanion(kit);
+        else say("Kit selected. Practice with real players, or install PvP BOT + HeroBot for an AI opponent.");
     }
 
     private static boolean isPvpBotLoaded() {
@@ -397,14 +455,22 @@ public final class PvpLearnerClient implements ClientModInitializer {
         int width = 330;
         int x = (context.getScaledWindowWidth() - width) / 2;
         int y = 42;
-        int height = training ? 67 : 54;
+        int height = training ? 84 : 70;
         context.fill(x, y, x + width, y + height, 0xC9141824);
-        context.fill(x, y, x + width, y + 2, 0xFF57D6FF);
+        int pulse = 150 + (int)(Math.sin(ticks * 0.18) * 70);
+        context.fill(x, y, x + width, y + 2, (pulse << 24) | 0x0057D6FF);
         context.drawTextWithShadow(client.textRenderer, Text.literal("PVP LEARNER  •  " + selectedKit.toUpperCase()), x + 10, y + 7, 0xFF7DD3FC);
         context.drawTextWithShadow(client.textRenderer, Text.literal(training ? "TRAINING: LIVE" : "TRAINING: PAUSED"), x + 10, y + 21, training ? 0xFF75F0A2 : 0xFFFFC56E);
         String stats = "Hits " + confirmedHits + "  |  Swings " + totalSwings + "  |  Mistakes " + mistakes;
         context.drawTextWithShadow(client.textRenderer, Text.literal(stats), x + 10, y + 34, 0xFFFFFFFF);
         context.drawTextWithShadow(client.textRenderer, Text.literal(lastTip), x + 10, y + 48, 0xFFFFE7A3);
+        context.drawTextWithShadow(client.textRenderer, Text.literal("J Previous  |  K Next  |  F6-F12 Arsenal  |  H UHC  |  P Pot"), x + 10, y + 61, 0xFFB7C9E8);
+        if (client.getNetworkHandler() != null) {
+            var entries = client.getNetworkHandler().getPlayerList();
+            String names = entries.stream().limit(3).map(entry -> entry.getProfile().getName()).reduce((a, b) -> a + ", " + b).orElse("No players listed");
+            if (entries.size() > 3) names += " +" + (entries.size() - 3);
+            context.drawTextWithShadow(client.textRenderer, Text.literal("ONLINE: " + names), x + 10, y + 73, 0xFF9EE7D5);
+        }
 
         if (crosshairFeedbackTicks > 0 && !client.options.hudHidden) {
             int cx = context.getScaledWindowWidth() / 2;
