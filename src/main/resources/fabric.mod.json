@@ -3,11 +3,12 @@
   "id": "pvp_learner",
   "version": "${version}",
   "name": "PvP Learner",
-  "description": "A lightweight PvP training coach prototype for Minecraft 1.21.11.",
+  "description": "A lightweight PvP training coach with a player-model sparring fighter for Minecraft 1.21.11.",
   "authors": ["PvP Learner contributors"],
   "license": "MIT",
-  "environment": "client",
+  "environment": "*",
   "entrypoints": {
+    "main": ["dev.pvplearner.PvpLearner"],
     "client": ["dev.pvplearner.PvpLearnerClient"]
   },
   "depends": {
