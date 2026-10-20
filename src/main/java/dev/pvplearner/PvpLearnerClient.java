@@ -46,6 +46,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static int confirmedHits = 0;
     private static int mistakes = 0;
     private static int resumeAttackAt = -1;
+    private static final KeyBinding.Category KIT_KEY_CATEGORY = KeyBinding.Category.create(Identifier.of("pvp_learner", "controls"));
     private static final List<String> KIT_ORDER = List.of("sword", "axe", "crystal", "bow", "minecart", "mace", "spear", "uhc", "pot");
     private static final List<KeyBinding> DIRECT_KIT_KEYS = new ArrayList<>();
     private static KeyBinding nextKitKey;
@@ -53,8 +54,8 @@ public final class PvpLearnerClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        nextKitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.pvp_learner.next_kit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, "category.pvp_learner.controls"));
-        previousKitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.pvp_learner.previous_kit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_J, "category.pvp_learner.controls"));
+        nextKitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.pvp_learner.next_kit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, KIT_KEY_CATEGORY));
+        previousKitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.pvp_learner.previous_kit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_J, KIT_KEY_CATEGORY));
         registerDirectKitKey("sword", GLFW.GLFW_KEY_F6);
         registerDirectKitKey("axe", GLFW.GLFW_KEY_F7);
         registerDirectKitKey("crystal", GLFW.GLFW_KEY_F8);
@@ -361,7 +362,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
 
     private static void registerDirectKitKey(String kit, int keyCode) {
         DIRECT_KIT_KEYS.add(KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.pvp_learner.kit_" + kit, InputUtil.Type.KEYSYM, keyCode, "category.pvp_learner.controls")));
+            "key.pvp_learner.kit_" + kit, InputUtil.Type.KEYSYM, keyCode, KIT_KEY_CATEGORY)));
     }
 
     private static void cycleKit(int direction) {
@@ -480,7 +481,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
         context.drawTextWithShadow(client.textRenderer, Text.literal("J Previous  |  K Next  |  F6-F12 Arsenal  |  H UHC  |  P Pot"), x + 10, y + 61, 0xFFB7C9E8);
         if (client.getNetworkHandler() != null) {
             var entries = client.getNetworkHandler().getPlayerList();
-            String names = entries.stream().limit(3).map(entry -> entry.getProfile().getName()).reduce((a, b) -> a + ", " + b).orElse("No players listed");
+            String names = entries.stream().limit(3).map(entry -> entry.getProfile().name()).reduce((a, b) -> a + ", " + b).orElse("No players listed");
             if (entries.size() > 3) names += " +" + (entries.size() - 3);
             context.drawTextWithShadow(client.textRenderer, Text.literal("ONLINE: " + names), x + 10, y + 73, 0xFF9EE7D5);
         }
