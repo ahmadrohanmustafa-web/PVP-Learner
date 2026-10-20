@@ -9,7 +9,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -25,7 +25,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static String lastTip = "Use /pvp kit sword to begin";
     private static int ticks = 0;
     private static boolean wasSwinging = false;
-    private static Entity pendingTarget = null;
+    private static LivingEntity pendingTarget = null;
     private static float pendingHealth = 0.0F;
     private static int pendingHurtTime = 0;
     private static int pendingAttackTicks = -1;
@@ -213,7 +213,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static void beginAttackCheck(MinecraftClient client) {
         totalSwings++;
         pendingAttackTicks = 0;
-        pendingTarget = client.crosshairTarget instanceof EntityHitResult hit ? hit.getEntity() : null;
+        pendingTarget = client.crosshairTarget instanceof EntityHitResult hit && hit.getEntity() instanceof LivingEntity living ? living : null;
         if (pendingTarget != null) {
             pendingHealth = pendingTarget.getHealth();
             pendingHurtTime = pendingTarget.hurtTime;
@@ -224,7 +224,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
     }
 
     private static void registerMistake(MinecraftClient client) {
-        Entity target = pendingTarget;
+        LivingEntity target = pendingTarget;
         boolean hadTarget = target != null;
         boolean cooldownLow = client.player != null && client.player.getAttackCooldownProgress(0.0F) < 0.85F;
         pendingAttackTicks = -1;
