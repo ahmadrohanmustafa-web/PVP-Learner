@@ -2,18 +2,18 @@
 
 Minecraft Java **1.21.11**, Fabric, Java 21.
 
-PvP Learner is a lightweight training companion. It does **not** copy or bundle another mod's code. When the optional **PvP BOT** mod is installed, PvP Learner uses its documented chat commands to create a real combat bot and give it the same selected practice kit.
+PvP Learner is a lightweight PvP training companion. It does **not** copy or bundle another mod's code. When optional **PvP BOT** is installed, PvP Learner sends that mod's documented commands to create and control a real combat opponent.
 
 ## Required for bot fights
 
 - Minecraft Java 1.21.11
 - Fabric Loader and Fabric API
-- **PvP BOT** for Fabric, version **0.0.15** is listed for Minecraft 1.21.11: https://modrinth.com/mod/pvp-bot-fabric
-- PvP BOT's required **HeroBot** dependency. Install dependencies listed on the PvP BOT version page as well.
+- **PvP BOT** for Fabric: version **0.0.15** lists Minecraft 1.21.11 compatibility: https://modrinth.com/mod/pvp-bot-fabric
+- PvP BOT's required **HeroBot** dependency. Install dependencies listed on the PvP BOT version page too.
 
-PvP BOT is optional: without it, PvP Learner's HUD and its own player-kit commands can still load, but it cannot create the real PvP opponent.
+PvP BOT remains optional. Without it, the player kit and training HUD can load, but there is no external combat opponent.
 
-## Commands
+## Commands (use /pvp)
 
 - `/pvp kit sword`
 - `/pvp kit axe`
@@ -21,37 +21,40 @@ PvP BOT is optional: without it, PvP Learner's HUD and its own player-kit comman
 - `/pvp kit uhc`
 - `/pvp kit pot`
 - `/pvp kit mace`
+- `/pvp summon` — request the companion again.
+- `/pvp dismiss` — remove the companion.
+- `/pvp start` and `/pvp stop` — resume/pause training and the opponent's attack.
+- `/pvp coach on` or `/pvp coach off` — show/hide the coach HUD.
+- `/pvp bot spawn [name]`
+- `/pvp bot remove <name>`
+- `/pvp bot list`
+- `/pvp bot attack <bot> <target>`
+- `/pvp bot stop <bot>`
+- `/pvp bot settings <setting> <value>` — for example, `/pvp bot settings combat true`.
 
-Selecting a kit attempts to:
-1. Clear your inventory and give you the selected kit.
-2. Save the resulting inventory as a PvP BOT kit named `pvl_<kit>`.
-3. Remove the previous `PvPLearnerBot`, spawn a replacement, and give it that kit.
-4. Enable combat/target-player settings and tell the bot to attack you.
+PvP Learner exposes its bot controls under **`/pvp`**. Internally it forwards these actions to PvP BOT's documented `/pvpbot` commands, because PvP BOT owns the actual bots and does not expose a public API in version 0.0.15.
 
-Other commands:
-- `/pvp summon` — request the companion bot again using the currently selected kit.
-- `/pvp dismiss` — request removal of `PvPLearnerBot`.
-- `/pvp start` / `/pvp stop` — toggle the PvP Learner HUD's training prompts.
-- `/pvp coach on` / `/pvp coach off` — show/hide the HUD.
+## Coaching behavior
 
-**Permission note:** kit giving, kit creation, and bot management are performed through Minecraft chat commands. They require a world/server where you have permission to run those commands (for singleplayer, cheats/commands must be enabled). If the server rejects a command, PvP Learner cannot bypass that permission.
+- The compact coach panel is centered near the top of the screen, slightly below the top edge.
+- It shows selected kit, training state, confirmed hits, swings, mistakes, and the latest tip.
+- A short **green** crosshair flash indicates a detected hit; a **red** flash indicates a swing where no damage was detected.
+- While training, a missed swing triggers a chat explanation. The companion is ordered to stop attacking for about three seconds, then attack resumes so the player can practise the correction.
+- It currently detects common errors: swinging without an entity under the crosshair, swinging too early, or failing to register damage despite targeting an entity. This is basic local feedback, not a complete analysis of every PvP mistake; hit feedback can be affected by server latency and unusual PvP mechanics.
 
-## Current limitations
+## Permission note
 
-- The companion integration relies on PvP BOT's documented command interface, not a direct API. PvP BOT's README says its APIs were removed in version 0.0.15.
-- Kit saving/replacing and command ordering must be tested in-game with PvP BOT and HeroBot installed. A successful compile cannot prove server commands were accepted.
-- The HUD still gives basic practice prompts. It does not yet measure hit accuracy, analyze a full fight, save detailed statistics, or generate a genuine performance report.
-- Crystal and other specialized kits are given to the bot, but actual combat behavior comes from the installed PvP BOT version and its settings.
+Kit creation, item giving, and bot management are sent as normal Minecraft commands. They require a world/server where you have permission to run those commands (for singleplayer, cheats/commands must be enabled). PvP Learner cannot bypass server permissions. If the server rejects a command, read the server chat for the reason.
 
 ## Build on GitHub
 
 1. Open the **Actions** tab: https://github.com/ahmadrohanmustafa-web/PVP-Learner/actions
-2. Select the latest **Build PvP Learner** run and wait for it to finish.
-3. If it succeeds, download the `pvp-learner-1.21.11` artifact, extract the ZIP, and place the PvP Learner JAR in `.minecraft/mods`.
-4. Install PvP BOT and its required dependencies separately. PvP Learner does not bundle them.
+2. Select the newest **Build PvP Learner** run and wait for it to finish.
+3. If successful, download the `pvp-learner-1.21.11` artifact, extract it, and put the PvP Learner JAR in `.minecraft/mods`.
+4. Install PvP BOT and its dependencies separately. PvP Learner does not bundle them.
 
 ## Build locally
 
 Install Java 21 and Gradle 8.14, then run `gradle build`. The output should be in `build/libs/`.
 
-Do not treat a successful build as proof that the bot fought correctly. In-game testing with the companion mod is still required.
+A successful build verifies compilation, not the in-game behavior of the external PvP BOT commands. Test in a world with command permissions.
