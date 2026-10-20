@@ -26,6 +26,10 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static int ticks = 0;
     private static boolean wasSwinging = false;
     private static LivingEntity pendingTarget = null;
+    private static LivingEntity preTickTarget = null;
+    private static float preTickHealth = 0.0F;
+    private static int preTickHurtTime = 0;
+    private static float pendingCooldown = 1.0F;
     private static float pendingHealth = 0.0F;
     private static int pendingHurtTime = 0;
     private static int pendingAttackTicks = -1;
@@ -159,6 +163,20 @@ public final class PvpLearnerClient implements ClientModInitializer {
             );
         });
 
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (client.player == null) {
+                preTickTarget = null;
+                return;
+            }
+            if (client.crosshairTarget instanceof EntityHitResult hit && hit.getEntity() instanceof LivingEntity living) {
+                preTickTarget = living;
+                preTickHealth = living.getHealth();
+                preTickHurtTime = living.hurtTime;
+            } else {
+                preTickTarget = null;
+            }
+        });
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.getNetworkHandler() == null) {
                 wasSwinging = false;
@@ -214,9 +232,16 @@ public final class PvpLearnerClient implements ClientModInitializer {
         totalSwings++;
         pendingAttackTicks = 0;
         pendingTarget = client.crosshairTarget instanceof EntityHitResult hit && hit.getEntity() instanceof LivingEntity living ? living : null;
+        pendingCooldown = client.player == null ? 1.0F : client.player.getAttackCooldownProgress(0.0F);
         if (pendingTarget != null) {
-            pendingHealth = pendingTarget.getHealth();
-            pendingHurtTime = pendingTarget.hurtTime;
+            // START_CLIENT_TICK captures the target before vanilla processes this tick's attack input.
+            if (pendingTarget == preTickTarget) {
+                pendingHealth = preTickHealth;
+                pendingHurtTime = preTickHurtTime;
+            } else {
+                pendingHealth = pendingTarget.getHealth();
+                pendingHurtTime = pendingTarget.hurtTime;
+            }
         } else {
             pendingHealth = 0.0F;
             pendingHurtTime = 0;
@@ -226,7 +251,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static void registerMistake(MinecraftClient client) {
         LivingEntity target = pendingTarget;
         boolean hadTarget = target != null;
-        boolean cooldownLow = client.player != null && client.player.getAttackCooldownProgress(0.0F) < 0.85F;
+        boolean cooldownLow = pendingCooldown < 0.85F;
         pendingAttackTicks = -1;
         pendingTarget = null;
         mistakes++;
