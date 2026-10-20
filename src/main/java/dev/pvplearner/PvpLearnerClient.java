@@ -1,6 +1,7 @@
 package dev.pvplearner;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -32,9 +33,13 @@ public final class PvpLearnerClient implements ClientModInitializer {
                             if (!java.util.Set.of("sword", "axe", "crystal", "uhc", "pot", "mace").contains(kit)) { say("Unknown kit. Try sword, axe, crystal, uhc, pot, or mace."); return 0; }
                             selectedKit = kit;
                             applyPlayerKit(kit);
-                            equipNearestCoach(kit);
                             lastTip = "Kit applied: " + kit + ". Your inventory was cleared first.";
-                            say(lastTip + " If commands are blocked, enable cheats or use a world where you have permission.");
+                            say(lastTip);
+                            if (isPvpBotLoaded()) {
+                                setupPvpBotCompanion(kit);
+                            } else {
+                                say("Optional fighter not detected. Install PvP BOT + its required HeroBot dependency to train against a real PvP bot.");
+                            }
                             return 1;
                         })))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("start").executes(ctx -> { training = true; lastTip = "Training started. Keep your crosshair on your opponent and watch your spacing."; say(lastTip); return 1; }))
@@ -43,18 +48,20 @@ public final class PvpLearnerClient implements ClientModInitializer {
                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("on").executes(ctx -> { coachEnabled = true; say("PvP coach HUD enabled."); return 1; }))
                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("off").executes(ctx -> { coachEnabled = false; say("PvP coach HUD hidden."); return 1; })))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("summon").executes(ctx -> {
-                    MinecraftClient client = MinecraftClient.getInstance();
-                    if (client.player == null || client.getNetworkHandler() == null) { say("You must be in a world first."); return 0; }
-                    client.getNetworkHandler().sendChatCommand("summon pvp_learner:pvp_coach ~ ~ ~3");
-                    equipNearestCoach(selectedKit);
-                    say("Summoning the PvP Coach with the selected kit. Note: advanced PvP actions such as crystal placement are not implemented yet.");
+                    if (!isPvpBotLoaded()) { say("PvP BOT is not loaded. Install PvP BOT and its required HeroBot dependency first."); return 0; }
+                    setupPvpBotCompanion(selectedKit);
                     return 1;
                 }))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("dismiss").executes(ctx -> {
                     MinecraftClient client = MinecraftClient.getInstance();
                     if (client.player == null || client.getNetworkHandler() == null) { say("You must be in a world first."); return 0; }
-                    client.getNetworkHandler().sendChatCommand("kill @e[type=pvp_learner:pvp_coach,distance=..32,limit=1]");
-                    say("Asked Minecraft to remove the nearest custom PvP Coach within 32 blocks.");
+                    if (isPvpBotLoaded()) {
+                        client.getNetworkHandler().sendChatCommand("pvpbot remove PvPLearnerBot");
+                        say("Sent PvP BOT the command to remove PvPLearnerBot.");
+                    } else {
+                        client.getNetworkHandler().sendChatCommand("kill @e[type=pvp_learner:pvp_coach,distance=..32,limit=1]");
+                        say("Sent the legacy coach removal command.");
+                    }
                     return 1;
                 }))
             );
@@ -116,27 +123,47 @@ public final class PvpLearnerClient implements ClientModInitializer {
         for (String item : items) client.getNetworkHandler().sendChatCommand("give @s " + item);
     }
 
-    private static void equipNearestCoach(String kit) {
+    private static boolean isPvpBotLoaded() {
+        return FabricLoader.getInstance().isModLoaded("pvp_bot");
+    }
+
+    /**
+     * Uses only the documented PvP BOT chat commands. PvP BOT remains optional;
+     * this mod does not bundle, link against, or copy its source code.
+     */
+    private static void setupPvpBotCompanion(String kit) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.getNetworkHandler() == null) return;
-        String target = "@e[type=pvp_learner:pvp_coach,sort=nearest,limit=1,distance=..32]";
-        String mainHand = switch (kit) {
-            case "axe" -> "minecraft:diamond_axe";
-            case "crystal" -> "minecraft:netherite_sword";
-            case "mace" -> "minecraft:mace";
-            default -> "minecraft:diamond_sword";
-        };
-        String helmet = kit.equals("crystal") || kit.equals("pot") || kit.equals("mace") ? "minecraft:diamond_helmet" : "minecraft:iron_helmet";
-        String chest = kit.equals("crystal") || kit.equals("pot") || kit.equals("mace") ? "minecraft:diamond_chestplate" : "minecraft:iron_chestplate";
-        String legs = kit.equals("crystal") || kit.equals("pot") || kit.equals("mace") ? "minecraft:diamond_leggings" : "minecraft:iron_leggings";
-        String boots = kit.equals("crystal") || kit.equals("pot") || kit.equals("mace") ? "minecraft:diamond_boots" : "minecraft:iron_boots";
-        String offhand = kit.equals("sword") || kit.equals("axe") ? "minecraft:shield" : "minecraft:totem_of_undying";
-        client.getNetworkHandler().sendChatCommand("item replace entity " + target + " weapon.mainhand with " + mainHand);
-        client.getNetworkHandler().sendChatCommand("item replace entity " + target + " weapon.offhand with " + offhand);
-        client.getNetworkHandler().sendChatCommand("item replace entity " + target + " armor.head with " + helmet);
-        client.getNetworkHandler().sendChatCommand("item replace entity " + target + " armor.chest with " + chest);
-        client.getNetworkHandler().sendChatCommand("item replace entity " + target + " armor.legs with " + legs);
-        client.getNetworkHandler().sendChatCommand("item replace entity " + target + " armor.feet with " + boots);
+        if (client.player == null || client.getNetworkHandler() == null) {
+            say("Join a world before starting a practice bot.");
+            return;
+        }
+        if (!isPvpBotLoaded()) {
+            say("PvP BOT is not loaded. Install PvP BOT and its required HeroBot dependency first.");
+            return;
+        }
+
+        String savedKit = "pvl_" + kit;
+        String playerName = client.player.getName().getString();
+        var network = client.getNetworkHandler();
+
+        // Save the exact items just given to the player as a PvP BOT kit.
+        // Deleting first allows changing a kit and rebuilding it with the same name.
+        network.sendChatCommand("pvpbot kit delete-kit " + savedKit);
+        network.sendChatCommand("pvpbot kit create-kit " + savedKit);
+
+        // Use one predictable name so the documented remove/equip/attack commands
+        // can address this training opponent without needing to parse server output.
+        network.sendChatCommand("pvpbot remove PvPLearnerBot");
+        network.sendChatCommand("pvpbot spawn PvPLearnerBot");
+        network.sendChatCommand("pvpbot kit give-kit PvPLearnerBot " + savedKit);
+        network.sendChatCommand("pvpbot settings combat true");
+        network.sendChatCommand("pvpbot settings target-players true");
+        network.sendChatCommand("pvpbot settings auto-target true");
+        network.sendChatCommand("pvpbot bot-management attack PvPLearnerBot " + playerName);
+
+        lastTip = "PvP BOT companion requested: " + kit + " kit";
+        say("Sent PvP BOT commands to save kit '" + savedKit + "', spawn PvPLearnerBot, equip it, and attack you.");
+        say("This requires cheats/command permission. Check chat for any rejected command; PvP BOT is a separate mod.");
     }
 
     private static void renderCoach(DrawContext context) {
