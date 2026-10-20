@@ -450,12 +450,25 @@ public final class PvpLearnerClient implements ClientModInitializer {
 
     private static void renderCoach(DrawContext context) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || !coachEnabled) return;
+        if (client.player == null) return;
+        if (client.player.isOnFire() && !client.options.hudHidden) {
+            int screenW = context.getScaledWindowWidth();
+            int screenH = context.getScaledWindowHeight();
+            for (int i = 0; i < 12; i++) {
+                int flameW = Math.max(10, screenW / 24);
+                int fx = i * screenW / 12;
+                int flicker = (int)(Math.sin(ticks * 0.32 + i * 1.7) * 8);
+                int flameH = screenH / 7 + flicker;
+                context.fill(fx, screenH - flameH, Math.min(screenW, fx + flameW), screenH, 0x42FF4B16);
+                context.fill(fx + 3, screenH - flameH / 2, Math.min(screenW, fx + flameW / 2), screenH, 0x22FFD34F);
+            }
+        }
+        if (!coachEnabled) return;
 
         int width = 330;
         int x = (context.getScaledWindowWidth() - width) / 2;
         int y = 42;
-        int height = training ? 84 : 70;
+        int height = 84;
         context.fill(x, y, x + width, y + height, 0xC9141824);
         int pulse = 150 + (int)(Math.sin(ticks * 0.18) * 70);
         context.fill(x, y, x + width, y + 2, (pulse << 24) | 0x0057D6FF);
