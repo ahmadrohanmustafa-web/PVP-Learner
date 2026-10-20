@@ -280,7 +280,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
                 "minecraft:iron_boots 1"
             };
             case "pot" -> items = new String[] {
-                "minecraft:diamond_sword 1", "minecraft:splash_potion[minecraft:potion_contents={potion:\\"minecraft:strong_healing\\"}] 16",
+                "minecraft:diamond_sword 1", "minecraft:splash_potion[minecraft:potion_contents={potion:\"minecraft:strong_healing\"}] 16",
                 "minecraft:ender_pearl 16", "minecraft:diamond_helmet 1", "minecraft:diamond_chestplate 1",
                 "minecraft:diamond_leggings 1", "minecraft:diamond_boots 1"
             };
