@@ -36,15 +36,15 @@ public final class PvpLearnerClient implements ClientModInitializer {
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("summon").executes(ctx -> {
                     MinecraftClient client = MinecraftClient.getInstance();
                     if (client.player == null || client.getNetworkHandler() == null) { say("You must be in a world first."); return 0; }
-                    client.getNetworkHandler().sendChatCommand("summon minecraft:zombie ~ ~ ~3 {CustomName:'PvPCoach',CustomNameVisible:1b,PersistenceRequired:1b,CanPickUpLoot:0b}");
-                    say("Summoning a basic PvP sparring zombie nearby. This needs cheats enabled in single-player or command permission on a server.");
+                    client.getNetworkHandler().sendChatCommand("summon pvp_learner:pvp_coach ~ ~ ~3");
+                    say("Summoning the custom Steve-model PvP Coach nearby. It fights using Minecraft mob AI; the HUD gives practice tips. Cheats or command permission are required.");
                     return 1;
                 }))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("dismiss").executes(ctx -> {
                     MinecraftClient client = MinecraftClient.getInstance();
                     if (client.player == null || client.getNetworkHandler() == null) { say("You must be in a world first."); return 0; }
-                    client.getNetworkHandler().sendChatCommand("kill @e[type=minecraft:zombie,name=PvPCoach,distance=..32,limit=1]");
-                    say("Asked Minecraft to remove the nearest PvP Coach zombie within 32 blocks.");
+                    client.getNetworkHandler().sendChatCommand("kill @e[type=pvp_learner:pvp_coach,distance=..32,limit=1]");
+                    say("Asked Minecraft to remove the nearest custom PvP Coach within 32 blocks.");
                     return 1;
                 }))
             );
