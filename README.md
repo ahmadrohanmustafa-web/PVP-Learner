@@ -1,60 +1,80 @@
-# PvP Learner
+# PvP Learner — Arsenal Edition
 
-Minecraft Java **1.21.11**, Fabric, Java 21.
+Minecraft Java Edition **1.21.11**, Fabric, Java 21.
 
-PvP Learner is a lightweight PvP training companion. It does **not** copy or bundle another mod's code. When optional **PvP BOT** is installed, PvP Learner sends that mod's documented commands to create and control a real combat opponent.
+PvP Learner is a client-side PvP training companion and kit hotkey helper. It preserves the existing coach HUD and optional PvP BOT integration. It does not bundle third-party mods.
 
-## Required for bot fights
+## Features
 
-- Minecraft Java 1.21.11
-- Fabric Loader and Fabric API
-- **PvP BOT** for Fabric: version **0.0.15** lists Minecraft 1.21.11 compatibility: https://modrinth.com/mod/pvp-bot-fabric
-- PvP BOT's required **HeroBot** dependency. Install dependencies listed on the PvP BOT version page too.
+- **Quick kit switching:** `J` previous kit, `K` next kit; direct keys are listed below. Change them in Options → Controls → PvP Learner.
+- **Coach HUD:** training state, hit/swing/mistake counters, live tip, animated top accent and green hit/red miss crosshair feedback.
+- **Player list:** shows up to three names from the current multiplayer tab list.
+- **PvP BOT integration (optional):** sends documented bot commands when PvP BOT and its required HeroBot dependency are installed.
+- **Vanilla kit loadouts:** sword, axe, crystal, bow, minecart, mace, spear, UHC and potion.
 
-PvP BOT remains optional. Without it, the player kit and training HUD can load, but there is no external combat opponent.
+## Hotkeys
 
-## Commands (use /pvp)
+| Key | Action |
+|---|---|
+| J / K | Previous / next kit |
+| F6 | Sword + shield |
+| F7 | Axe |
+| F8 | Crystal |
+| F9 | Bow |
+| F10 | Minecart |
+| F11 | Mace |
+| F12 | Spear |
+| H | UHC |
+| P | Potion |
 
-- `/pvp kit sword`
-- `/pvp kit axe`
-- `/pvp kit crystal`
-- `/pvp kit uhc`
-- `/pvp kit pot`
-- `/pvp kit mace`
-- `/pvp summon` — request the companion again.
-- `/pvp dismiss` — remove the companion.
-- `/pvp start` and `/pvp stop` — resume/pause training and the opponent's attack.
-- `/pvp coach on` or `/pvp coach off` — show/hide the coach HUD.
-- `/pvp bot spawn [name]`
-- `/pvp bot remove <name>`
-- `/pvp bot list`
-- `/pvp bot attack <bot> <target>`
-- `/pvp bot stop <bot>`
-- `/pvp bot settings <setting> <value>` — for example, `/pvp bot settings combat true`.
+Keys are configurable in **Options → Controls → Key Binds → PvP Learner**.
 
-PvP Learner exposes its bot controls under **`/pvp`**. Internally it forwards these actions to PvP BOT's documented `/pvpbot` commands, because PvP BOT owns the actual bots and does not expose a public API in version 0.0.15.
+## Commands
 
-## Coaching behavior
+- `/pvp` — help
+- `/pvp kit <sword|axe|crystal|bow|minecart|mace|spear|uhc|pot>`
+- `/pvp summon`, `/pvp dismiss`
+- `/pvp start`, `/pvp stop`
+- `/pvp coach on` / `/pvp coach off`
+- `/pvp bot spawn [name]`, `/pvp bot remove <name>`, `/pvp bot list`
+- `/pvp bot attack <bot> <target>`, `/pvp bot stop <bot>`
+- `/pvp bot settings <setting> <value>`
 
-- The compact coach panel is centered near the top of the screen, slightly below the top edge.
-- It shows selected kit, training state, confirmed hits, swings, mistakes, and the latest tip.
-- A short **green** crosshair flash indicates a detected hit; a **red** flash indicates a swing where no damage was detected.
-- While training, a missed swing triggers a chat explanation. The companion is ordered to stop attacking for about three seconds, then attack resumes so the player can practise the correction.
-- It currently detects common errors: swinging without an entity under the crosshair, swinging too early, or failing to register damage despite targeting an entity. This is basic local feedback, not a complete analysis of every PvP mistake; hit feedback can be affected by server latency and unusual PvP mechanics.
+## Multiplayer and permissions
 
-## Permission note
+The HUD, keybindings and hit feedback are client-side and can be used while connected to multiplayer servers. **Giving kits uses ordinary Minecraft commands** (`/clear` and `/give`), so it requires command permission; this mod intentionally does not bypass server permissions or modify server rules. On servers that prohibit kit commands, use the hotkeys for local selection/coach features and obtain gear normally. Player names are read from the vanilla player list. Bot practice requires a server/world where PvP BOT commands are allowed.
 
-Kit creation, item giving, and bot management are sent as normal Minecraft commands. They require a world/server where you have permission to run those commands (for singleplayer, cheats/commands must be enabled). PvP Learner cannot bypass server permissions. If the server rejects a command, read the server chat for the reason.
+The client-side mod does not create an authoritative server-side kit system. For fair multiplayer kit queues, install a server-approved kit plugin/mod or have the server owner implement kits.
 
-## Build on GitHub
+## Install
 
-1. Open the **Actions** tab: https://github.com/ahmadrohanmustafa-web/PVP-Learner/actions
-2. Select the newest **Build PvP Learner** run and wait for it to finish.
-3. If successful, download the `pvp-learner-1.21.11` artifact, extract it, and put the PvP Learner JAR in `.minecraft/mods`.
-4. Install PvP BOT and its dependencies separately. PvP Learner does not bundle them.
+1. Install **Minecraft Java 1.21.11** and launch it once.
+2. Install **Java 21**.
+3. Install Fabric Loader for **1.21.11** and Fabric API for the same Minecraft version.
+4. Download the PvP Learner JAR from the GitHub Actions artifact or build it yourself.
+5. Put the JAR in `%AppData%\.minecraft\mods` on Windows (or your launcher's instance `mods` folder).
+6. Start the Fabric 1.21.11 profile. Check Options → Controls for the PvP Learner keys.
+
+### Optional practice opponent
+
+Install [PvP BOT Fabric](https://modrinth.com/mod/pvp-bot-fabric) version supporting Minecraft 1.21.11 and all dependencies listed by its version page, including HeroBot where required. The third-party mod is not bundled.
 
 ## Build locally
 
-Install Java 21 and Gradle 8.14, then run `gradle build`. The output should be in `build/libs/`.
+Install Java 21 and Gradle 8.14, open a terminal in the repository folder, then run:
 
-A successful build verifies compilation, not the in-game behavior of the external PvP BOT commands. Test in a world with command permissions.
+```bash
+gradle build --no-daemon
+```
+
+Output: `build/libs/pvp-learner-0.1.0.jar` and a sources JAR. If you use a wrapper in your local checkout, `./gradlew build` (macOS/Linux) or `gradlew.bat build` (Windows) is also fine.
+
+## CI artifact and size check
+
+Pushes to the feature branch and `main` trigger GitHub Actions. The workflow uploads the compiled mod JAR and source archive, and records file sizes. The compiled JAR's actual size is reported by CI; source code is not padded just to hit a number. If you require a single distributable archive above 200 KB, bundle the compiled JAR plus sources and this README; do not assume the compiled JAR alone exceeds 200 KB.
+
+## Notes / limitations
+
+- The spear kit uses `minecraft:netherite_spear` and depends on the exact item IDs present in the 1.21.11 mappings/game build. If the server rejects this item ID, the rest of the kit can still be used and the item ID must be updated to match the target version.
+- A successful Gradle build proves compilation only. Test each kit in a command-enabled singleplayer world and then on a multiplayer server where kit commands are permitted.
+- No custom combat damage or server authority is added; vanilla combat mechanics remain in control.
