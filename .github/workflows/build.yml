@@ -2,7 +2,7 @@ name: Build PvP Learner
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, "feature/**" ]
   workflow_dispatch:
 
 permissions:
@@ -25,9 +25,17 @@ jobs:
           gradle-version: '8.14'
       - name: Build mod
         run: gradle build --no-daemon
+      - name: Report output sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          find build/libs -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+          test -n "$(find build/libs -maxdepth 1 -type f -name '*.jar' -print -quit)"
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: pvp-learner-1.21.11
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            README.md
           if-no-files-found: error
