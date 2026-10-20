@@ -6,13 +6,14 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
 
 public final class PvpLearner implements ModInitializer {
     private static final Identifier COACH_ID = Identifier.of("pvp_learner", "pvp_coach");
-    private static final RegistryKey<EntityType<?>> COACH_KEY = RegistryKey.of(Registries.ENTITY_TYPE, COACH_ID);
+    private static final RegistryKey<EntityType<?>> COACH_KEY = RegistryKey.of(RegistryKeys.ENTITY_TYPE, COACH_ID);
 
     public static final EntityType<PvpCoachEntity> PVP_COACH = Registry.register(
         Registries.ENTITY_TYPE,
