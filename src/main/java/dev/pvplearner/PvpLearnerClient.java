@@ -3,6 +3,7 @@ package dev.pvplearner;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -18,6 +19,9 @@ public final class PvpLearnerClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        // Register the custom coach renderer; without this Minecraft crashes when the entity is visible.
+        EntityRendererRegistry.register(PvpLearner.PVP_COACH, PvpCoachRenderer::new);
+
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("pvp")
                 .executes(ctx -> { say("PvP Learner: /pvp kit <sword|axe|crystal|uhc|pot|mace>, /pvp start, /pvp stop, /pvp coach <on|off>"); return 1; })
