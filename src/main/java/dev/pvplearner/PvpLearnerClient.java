@@ -31,8 +31,22 @@ public final class PvpLearnerClient implements ClientModInitializer {
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("start").executes(ctx -> { training = true; lastTip = "Training started. Keep your crosshair on your opponent and watch your spacing."; say(lastTip); return 1; }))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("stop").executes(ctx -> { training = false; lastTip = "Training stopped. Use /pvp to choose another exercise."; say(lastTip); return 1; }))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("coach")
-                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("on").executes(ctx -> { coachEnabled = true; say("PvP coach enabled."); return 1; }))
-                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("off").executes(ctx -> { coachEnabled = false; say("PvP coach hidden."); return 1; })))
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("on").executes(ctx -> { coachEnabled = true; say("PvP coach HUD enabled."); return 1; }))
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("off").executes(ctx -> { coachEnabled = false; say("PvP coach HUD hidden."); return 1; })))
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("summon").executes(ctx -> {
+                    MinecraftClient client = MinecraftClient.getInstance();
+                    if (client.player == null || client.getNetworkHandler() == null) { say("You must be in a world first."); return 0; }
+                    client.getNetworkHandler().sendChatCommand("summon minecraft:zombie ~ ~ ~3 {CustomName:'{\\"text\\":\\"PvP Coach\\"}',CustomNameVisible:1b,PersistenceRequired:1b,CanPickUpLoot:0b}");
+                    say("Summoning a basic PvP sparring zombie nearby. This needs cheats enabled in single-player or command permission on a server.");
+                    return 1;
+                }))
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("dismiss").executes(ctx -> {
+                    MinecraftClient client = MinecraftClient.getInstance();
+                    if (client.player == null || client.getNetworkHandler() == null) { say("You must be in a world first."); return 0; }
+                    client.getNetworkHandler().sendChatCommand("kill @e[type=minecraft:zombie,name=\\"PvP Coach\\",distance=..32,limit=1]");
+                    say("Asked Minecraft to remove the nearest PvP Coach zombie within 32 blocks.");
+                    return 1;
+                }))
             );
         });
 
