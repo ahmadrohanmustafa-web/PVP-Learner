@@ -29,6 +29,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
     private static LivingEntity preTickTarget = null;
     private static float preTickHealth = 0.0F;
     private static int preTickHurtTime = 0;
+    private static float preTickCooldown = 1.0F;
     private static float pendingCooldown = 1.0F;
     private static float pendingHealth = 0.0F;
     private static int pendingHurtTime = 0;
@@ -168,6 +169,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
                 preTickTarget = null;
                 return;
             }
+            preTickCooldown = client.player.getAttackCooldownProgress(0.0F);
             if (client.crosshairTarget instanceof EntityHitResult hit && hit.getEntity() instanceof LivingEntity living) {
                 preTickTarget = living;
                 preTickHealth = living.getHealth();
@@ -232,7 +234,7 @@ public final class PvpLearnerClient implements ClientModInitializer {
         totalSwings++;
         pendingAttackTicks = 0;
         pendingTarget = client.crosshairTarget instanceof EntityHitResult hit && hit.getEntity() instanceof LivingEntity living ? living : null;
-        pendingCooldown = client.player == null ? 1.0F : client.player.getAttackCooldownProgress(0.0F);
+        pendingCooldown = preTickCooldown;
         if (pendingTarget != null) {
             // START_CLIENT_TICK captures the target before vanilla processes this tick's attack input.
             if (pendingTarget == preTickTarget) {
